@@ -13,9 +13,6 @@ import java.util.Calendar;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 import model.Member;
 
 /**
@@ -26,11 +23,6 @@ public class MultiChat implements constants {
 
     private static ArrayList<PrintWriter> clientoutputstreams;
     private static ArrayList<Member> $listofusers;
-    private static JFrame frame;
-    private static JButton server_button;
-    private static JLabel header;
-    private BufferedReader incoming_reader;
-    private PrintWriter writer;
 
     /**
      * @param args the command line arguments
@@ -45,7 +37,7 @@ public class MultiChat implements constants {
             Socket clients = server_sock.accept();
             Thread t = new Thread(new multiclient(clients));
             t.start();
-            System.out.println("Got new connection!!!");
+            
         }
     }
 
@@ -53,7 +45,6 @@ public class MultiChat implements constants {
 
         private Socket connection;
         private InputStream incoming_connection_stream;
-        private PrintWriter writer;
         private BufferedReader reader;
         private Calendar c;
         private SimpleDateFormat df;
@@ -72,7 +63,7 @@ public class MultiChat implements constants {
             try {
                 String line = null;
                 while ((line = reader.readLine()) != null) {
-                    System.out.println(line+"<---");
+                  
                     if (line.startsWith("USER_JOINED")) {
                         String token = line.split("#")[1];
                         String member_details[] = token.split("/");
@@ -82,16 +73,15 @@ public class MultiChat implements constants {
                         $listofusers.add(member);
 
                         PrintWriter pw = new PrintWriter(connection.getOutputStream());
-                        if(!$listofusers.isEmpty()){
-                            
-                            StringBuilder users=new StringBuilder();
-                            for(Member m:$listofusers){
+                        if (!$listofusers.isEmpty()) {
+
+                            StringBuilder users = new StringBuilder();
+                            for (Member m : $listofusers) {
                                 users.append(m.getNickname()).append("/");
                             }
-                            pw.println("LIST#"+users.toString());
+                            pw.println("LIST#" + users.toString());
                             pw.flush();
-                       }
-                        else{
+                        } else {
                             pw.println("INFO#No user currently available.");
                             pw.flush();
                         }
@@ -100,9 +90,13 @@ public class MultiChat implements constants {
                     }
                     if (line.startsWith("MESSAGE")) {
 
-                        telltoOthers(line.split("#")[1],Messages.MESSAGE);
+                        telltoOthers(line.split("#")[1], Messages.MESSAGE);
                     }
-                    
+
+                    if (line.startsWith("USER_EXITED")) {
+                        
+                        removeUser(line.split("#")[1]);
+                    }
 
 
                 }
@@ -112,20 +106,18 @@ public class MultiChat implements constants {
 
         }
 
-        public void telltoOthers(String Groupmessage,Messages msg_type) {
+        public void telltoOthers(String Groupmessage, Messages msg_type) {
             Iterator it = clientoutputstreams.iterator();
-            System.out.println("telling others"+Groupmessage);
             while (it.hasNext()) {
                 PrintWriter wr = (PrintWriter) it.next();
-                if(msg_type==Messages.JUST_JOINED){
-                    wr.println(""+Groupmessage);
+                if (msg_type == Messages.JUST_JOINED) {
+                    wr.println("" + Groupmessage);
+                    wr.flush();
+                } else if (msg_type == Messages.MESSAGE) {
+                    wr.println("MESSAGE#" + Groupmessage);
                     wr.flush();
                 }
-                else if(msg_type==Messages.MESSAGE){
-                    wr.println("MESSAGE#"+Groupmessage);
-                    wr.flush();
-                }
-                    
+
             }
 
         }
@@ -134,6 +126,20 @@ public class MultiChat implements constants {
             String groupmessage = "just joined the chat application.";
             String user = member.getNickname();
             telltoOthers(user + "-" + groupmessage + " Time:" + (member.getTime()), Messages.JUST_JOINED);
+        }
+
+        /**
+         * pass in the name of the user to remove/sign out.
+         *
+         * @param user
+         */
+        private void removeUser(String user) {
+            $listofusers.remove(user);
+            //notify others about his signing out.
+            for (PrintWriter printWriter : clientoutputstreams) {
+                printWriter.println("USER_EXITED#" + user);
+                printWriter.flush();
+            }
         }
     }
 }

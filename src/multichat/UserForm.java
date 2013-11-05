@@ -192,7 +192,6 @@ public class UserForm extends javax.swing.JFrame implements DocumentListener {
 
     @Override
     public void changedUpdate(DocumentEvent de) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     private void connectToServer() {

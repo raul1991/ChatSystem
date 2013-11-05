@@ -6,6 +6,8 @@ package multichat;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -24,11 +26,48 @@ import model.Member;
  *
  * @author user
  */
-public class Client extends javax.swing.JFrame implements ListSelectionListener, constants {
+public class Client extends javax.swing.JFrame implements ListSelectionListener, constants, WindowListener {
 
     private DateFormat df;
     private String time;
     private final Member member;
+
+    @Override
+    public void windowOpened(WindowEvent we) {
+//        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void windowClosing(WindowEvent we) {
+        System.out.println("closing");
+        writer.println("USER_EXITED#" + this.member.getNickname());
+        writer.flush();
+    }
+
+    @Override
+    public void windowClosed(WindowEvent we) {
+        System.out.println("closed");
+    }
+
+    @Override
+    public void windowIconified(WindowEvent we) {
+//        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void windowDeiconified(WindowEvent we) {
+//        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void windowActivated(WindowEvent we) {
+//        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void windowDeactivated(WindowEvent we) {
+//        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     public class TimerThread implements Runnable {
 
@@ -65,6 +104,7 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         initComponents();
         this.member = m;
         iconlist.addListSelectionListener(this);
+
 //        setupimages();
         username.setFont(new Font("sans", Font.BOLD, 20));
         username.setText(m.getNickname());
@@ -73,10 +113,10 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         reader_buffer = new BufferedReader(new InputStreamReader(incoming_stream));
         outgoing_stream = client_sock.getOutputStream();
         writer = new PrintWriter(outgoing_stream);
-        
+        addWindowListener(this);
         writer.println("USER_JOINED#" + m);
         writer.flush();
-        
+
         Thread incoming_reader = new Thread(new MessageReader(m));
         Thread timer = new Thread(new TimerThread());
         incoming_reader.start();
@@ -239,10 +279,10 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
     }// </editor-fold>//GEN-END:initComponents
 
     private void SendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SendActionPerformed
-        String message = ClientMessage.getText();
+        String message = ClientMessage.getText().replace("\n", " ");
 
         ClientMessage.setText("");
-        ChatWindow.setForeground(Color.black);
+        ChatWindow.setForeground(COLOR_MESSAGE);
         ChatWindow.setFont(new Font("monospace", Font.BOLD, 14));
         writer.println("MESSAGE#" + member.getNickname() + ":" + message);
         writer.flush();
@@ -289,16 +329,14 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
 
     @Override
     public void valueChanged(ListSelectionEvent e) {
-        System.out.println("Clicked:" + e.getSource());
+        
     }
 
     public class MessageReader implements Runnable {
 
         private String tokens[];
         private DefaultListModel listmodel = new DefaultListModel();
-//        private String nickname;
         private Member m;
-//        private String name;
 
         public MessageReader(Member m) {
             this.m = m;
@@ -309,39 +347,52 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
             try {
                 String line = "";
                 while ((line = reader_buffer.readLine()) != null) {
-                    System.out.println(line + "--->");
+
                     if (line.contains("just joined")) {
                         tokens = line.split("-");
                         if (!tokens[0].equals(this.m.getNickname())) {
                             adduser(tokens[0]);
-                            System.out.println("read" + line);
-                            ChatWindow.setForeground(Color.blue);
+
+                            ChatWindow.setForeground(COLOR_MESSAGE);
                             ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));
                             ChatWindow.append("\n" + line);
                         } else {
-                            System.out.println("it's you...");
+                            /**
+                             * You joined the chat.Here you can perform action.
+                             */
                         }
                     }
-                    if(line.startsWith("LIST")){
-                        tokens=line.split("#");
-                        ChatWindow.setForeground(Color.BLACK);
+                    if (line.startsWith("LIST")) {
+                        tokens = line.split("#");
+                        ChatWindow.setForeground(COLOR_INFO);
                         ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));
 
-                        for(String users:tokens[1].split("/")){
-                            if(!users.equals(this.m.getNickname())){
-                                ChatWindow.append("\n" + users +"is available...");
+                        for (String users : tokens[1].split("/")) {
+                            if (!users.equals(this.m.getNickname())) {
+                                ChatWindow.append("\n" + users + " is available...");
                                 adduser(users);
                             }
                         }
                     }
-                    if(line.startsWith("INFO")){
-                        ChatWindow.setForeground(Color.red);
+                    if (line.startsWith("INFO")) {
+                        ChatWindow.setForeground(COLOR_ERROR);
                         ChatWindow.append("\n" + line);
                     }
-                    
-                    if(line.startsWith("MESSAGE")){
+
+                    if (line.startsWith("MESSAGE")) {
+                        ChatWindow.setForeground(COLOR_MESSAGE);
                         ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));
-                        ChatWindow.append("\n"+line.split("#")[1]);
+                        ChatWindow.append("\n" + line.split("#")[1]);
+                    }
+
+                    if (line.startsWith("USER_EXITED")) {
+
+                        ChatWindow.setForeground(COLOR_INFO);
+                        String user = line.split("#")[1];
+                        removeUser(user);
+                        if (!user.equals(this.m.getNickname())) {
+                            ChatWindow.append("\n" + line.split("#")[1] + " just left the chat.");
+                        }
                     }
                 }
 
@@ -351,14 +402,25 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         }
 
         private void adduser(String username) {
-//            System.out.println(username + "split");
 
-            listmodel.addElement(new JLabel("<html><body><b><font color=#AA66CC>" + username + "</font></b></body></html>").getText());
-            userlist.setBackground(Color.ORANGE);
-            userlist.setSelectionBackground(Color.lightGray);
-
+            listmodel.addElement(new JLabel(username).getText());
+            userlist.setBackground(COLOR_LIST);
+            userlist.setSelectionBackground(COLOR_INFO);
             userlist.setModel(listmodel);
 
+        }
+
+        private void removeUser(String username) {
+            int s = listmodel.size();
+            System.out.println(""+username);
+            for (int i = 0; i < s; i++) {
+
+                if ((listmodel.getElementAt(i)).equals(username)) {
+                    
+                        listmodel.remove(i);
+                }
+            }
+            
         }
     }
 }
