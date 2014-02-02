@@ -2,8 +2,10 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package multichat;
+package server;
 
+import commons.Messages;
+import commons.constants;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;

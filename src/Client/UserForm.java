@@ -2,8 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package multichat;
+package Client;
 
+import commons.constants;
 import java.awt.Color;
 import java.net.Socket;
 import java.text.SimpleDateFormat;

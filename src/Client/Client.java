@@ -2,9 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package multichat;
+package Client;
 
-import java.awt.Color;
+import commons.constants;
 import java.awt.Font;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -282,8 +282,9 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         String message = ClientMessage.getText().replace("\n", " ");
 
         ClientMessage.setText("");
-        ChatWindow.setForeground(COLOR_MESSAGE);
-        ChatWindow.setFont(new Font("monospace", Font.BOLD, 14));
+//        ChatWindow.setForeground(COLOR_MESSAGE);
+//        ChatWindow.setFont(new Font("monospace", Font.BOLD, 14));
+        ChatWindow.append("\n"+"You:"+message);
         writer.println("MESSAGE#" + member.getNickname() + ":" + message);
         writer.flush();
     }//GEN-LAST:event_SendActionPerformed
@@ -353,8 +354,8 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
                         if (!tokens[0].equals(this.m.getNickname())) {
                             adduser(tokens[0]);
 
-                            ChatWindow.setForeground(COLOR_MESSAGE);
-                            ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));
+                            //ChatWindow.setForeground(COLOR_MESSAGE);
+                            //ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));
                             ChatWindow.append("\n" + line);
                         } else {
                             /**
@@ -364,8 +365,8 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
                     }
                     if (line.startsWith("LIST")) {
                         tokens = line.split("#");
-                        ChatWindow.setForeground(COLOR_INFO);
-                        ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));
+                        //ChatWindow.setForeground(COLOR_INFO);
+                        //ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));
 
                         for (String users : tokens[1].split("/")) {
                             if (!users.equals(this.m.getNickname())) {
@@ -375,19 +376,19 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
                         }
                     }
                     if (line.startsWith("INFO")) {
-                        ChatWindow.setForeground(COLOR_ERROR);
+                        //ChatWindow.setForeground(COLOR_ERROR);
                         ChatWindow.append("\n" + line);
                     }
 
-                    if (line.startsWith("MESSAGE")) {
-                        ChatWindow.setForeground(COLOR_MESSAGE);
-                        ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));
+                    if (line.startsWith("MESSAGE") && !line.split("#")[1].split(":")[0].equals(m.getNickname())) {
+                        //ChatWindow.setForeground(COLOR_MESSAGE);
+                        //ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));
                         ChatWindow.append("\n" + line.split("#")[1]);
                     }
 
                     if (line.startsWith("USER_EXITED")) {
 
-                        ChatWindow.setForeground(COLOR_INFO);
+                        //ChatWindow.setForeground(COLOR_INFO);
                         String user = line.split("#")[1];
                         removeUser(user);
                         if (!user.equals(this.m.getNickname())) {
