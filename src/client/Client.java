@@ -2,9 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package Client;
+package client;
 
-import commons.constants;
+import commons.Constants;
 import java.awt.Font;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -26,7 +26,7 @@ import model.Member;
  *
  * @author user
  */
-public class Client extends javax.swing.JFrame implements ListSelectionListener, constants, WindowListener {
+public class Client extends javax.swing.JFrame implements ListSelectionListener, Constants, WindowListener {
 
     private DateFormat df;
     private String time;

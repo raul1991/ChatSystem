@@ -10,7 +10,7 @@ import java.awt.Color;
  *
  * @author user
  */
-public interface constants {
+public interface Constants {
     public String uname=System.getProperty("user.name");
     public int server_port=12345;
     public Color COLOR_ERROR=Color.RED;

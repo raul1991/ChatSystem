@@ -5,7 +5,7 @@
 package server;
 
 import commons.Messages;
-import commons.constants;
+import commons.Constants;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -21,7 +21,7 @@ import model.Member;
  *
  * @author user
  */
-public class MultiChat implements constants {
+public class MultiChat implements Constants {
 
     private static HashMap<Member, PrintWriter> clientoutputstreams;
 //    private static ArrayList<Member> $listofusers;

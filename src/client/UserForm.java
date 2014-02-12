@@ -2,9 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package Client;
+package client;
 
-import commons.constants;
+import commons.Constants;
 import java.awt.Color;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
@@ -197,7 +197,7 @@ public class UserForm extends javax.swing.JFrame implements DocumentListener {
 
     private void connectToServer() {
         try {
-            Socket socket=new Socket(jTextField2.getText(), constants.server_port);
+            Socket socket=new Socket(jTextField2.getText(), Constants.server_port);
             Member m=new Member();
             m.setNickname(jTextField1.getText());
             
