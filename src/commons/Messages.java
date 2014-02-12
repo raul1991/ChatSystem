@@ -10,7 +10,7 @@ package commons;
  */
 public enum Messages{
     
-    USER_EXISTS,
+    USER_EXITED,
     GIVE_ME_LISTS,
     MESSAGE,
     JUST_JOINED

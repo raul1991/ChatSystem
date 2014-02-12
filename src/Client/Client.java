@@ -47,6 +47,7 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
     @Override
     public void windowClosed(WindowEvent we) {
         System.out.println("closed");
+        System.exit(1);
     }
 
     @Override
@@ -114,9 +115,9 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         outgoing_stream = client_sock.getOutputStream();
         writer = new PrintWriter(outgoing_stream);
         addWindowListener(this);
-        writer.println("USER_JOINED#" + m);
+        writer.println("JUST_JOINED#" + m);
         writer.flush();
-
+        
         Thread incoming_reader = new Thread(new MessageReader(m));
         Thread timer = new Thread(new TimerThread());
         incoming_reader.start();
@@ -348,15 +349,18 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
             try {
                 String line = "";
                 while ((line = reader_buffer.readLine()) != null) {
-
-                    if (line.contains("just joined")) {
-                        tokens = line.split("-");
+                    System.out.println("<---"+line);
+                    if (line.contains("JUST_JOINED")) {
+                        /**
+                         * Packet format: JUST_JOINED#username/just joined Time:
+                         */
+                        tokens = line.split("#")[1].split("/");
                         if (!tokens[0].equals(this.m.getNickname())) {
                             adduser(tokens[0]);
 
                             //ChatWindow.setForeground(COLOR_MESSAGE);
                             //ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));
-                            ChatWindow.append("\n" + line);
+                            ChatWindow.append("\n" + tokens[0]+MSG_JUST_JOINED);
                         } else {
                             /**
                              * You joined the chat.Here you can perform action.
@@ -379,7 +383,6 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
                         //ChatWindow.setForeground(COLOR_ERROR);
                         ChatWindow.append("\n" + line);
                     }
-
                     if (line.startsWith("MESSAGE") && !line.split("#")[1].split(":")[0].equals(m.getNickname())) {
                         //ChatWindow.setForeground(COLOR_MESSAGE);
                         //ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));

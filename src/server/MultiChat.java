@@ -10,9 +10,9 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import model.Member;
@@ -23,15 +23,15 @@ import model.Member;
  */
 public class MultiChat implements constants {
 
-    private static ArrayList<PrintWriter> clientoutputstreams;
-    private static ArrayList<Member> $listofusers;
+    private static HashMap<Member, PrintWriter> clientoutputstreams;
+//    private static ArrayList<Member> $listofusers;
 
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException {
-        clientoutputstreams = new ArrayList();
-        $listofusers = new ArrayList<Member>();
+        clientoutputstreams = new HashMap<Member, PrintWriter>();
+//        $listofusers = new ArrayList<Member>();
         ServerSocket server_sock = new ServerSocket(server_port);
         int i = 0;
 
@@ -39,7 +39,7 @@ public class MultiChat implements constants {
             Socket clients = server_sock.accept();
             Thread t = new Thread(new multiclient(clients));
             t.start();
-            
+
         }
     }
 
@@ -65,38 +65,40 @@ public class MultiChat implements constants {
             try {
                 String line = null;
                 while ((line = reader.readLine()) != null) {
-                  
-                    if (line.startsWith("USER_JOINED")) {
+
+                    if (line.startsWith("JUST_JOINED")) {
                         String token = line.split("#")[1];
                         String member_details[] = token.split("/");
                         Member member = new Member();
                         member.setNickname(member_details[0]);
                         member.setTime(member_details[1]);
-                        $listofusers.add(member);
+//                        $listofusers.add(member);
 
                         PrintWriter pw = new PrintWriter(connection.getOutputStream());
-                        if (!$listofusers.isEmpty()) {
+                        clientoutputstreams.put(member, pw);
+//                        if (!$listofusers.isEmpty()) {
 
-                            StringBuilder users = new StringBuilder();
-                            for (Member m : $listofusers) {
-                                users.append(m.getNickname()).append("/");
-                            }
-                            pw.println("LIST#" + users.toString());
-                            pw.flush();
-                        } else {
-                            pw.println("INFO#No user currently available.");
-                            pw.flush();
+                        StringBuilder users = new StringBuilder();
+                        for (Member m : clientoutputstreams.keySet()) {
+                            users.append(m.getNickname()).append("/");
                         }
-                        clientoutputstreams.add(pw);
+                        pw.println("LIST#" + users.toString());
+                        pw.flush();
+                        users = null;
+//                        } else {
+//                            pw.println("INFO#No user currently available.");
+//                            pw.flush();
+//                        }
+//                        clientoutputstreams.put(member.getNickname(), pw);
                         telltoOthersaboutothers(member);
                     }
                     if (line.startsWith("MESSAGE")) {
 
-                        telltoOthers(line.split("#")[1], Messages.MESSAGE);
+                        telltoOthers("MESSAGE#"+line.split("#")[1], Messages.MESSAGE);
                     }
 
                     if (line.startsWith("USER_EXITED")) {
-                        
+
                         removeUser(line.split("#")[1]);
                     }
 
@@ -107,17 +109,24 @@ public class MultiChat implements constants {
             }
 
         }
-
+        /**
+         * Redundant if else exists.Do check.
+         * @param Groupmessage
+         * @param msg_type 
+         */
         public void telltoOthers(String Groupmessage, Messages msg_type) {
-            Iterator it = clientoutputstreams.iterator();
-            while (it.hasNext()) {
-                PrintWriter wr = (PrintWriter) it.next();
+//            Iterator it = clientoutputstreams.values();
+            for (PrintWriter printWriter : clientoutputstreams.values()) {
+//                PrintWriter wr = (PrintWriter) it.next();
                 if (msg_type == Messages.JUST_JOINED) {
-                    wr.println("" + Groupmessage);
-                    wr.flush();
+                    printWriter.println(Groupmessage);
+                    printWriter.flush();
                 } else if (msg_type == Messages.MESSAGE) {
-                    wr.println("MESSAGE#" + Groupmessage);
-                    wr.flush();
+                    printWriter.println(Groupmessage);
+                    printWriter.flush();
+                }else if (msg_type==Messages.USER_EXITED){
+                    printWriter.println(Groupmessage);
+                    printWriter.flush();
                 }
 
             }
@@ -127,7 +136,7 @@ public class MultiChat implements constants {
         private void telltoOthersaboutothers(Member member) {
             String groupmessage = "just joined the chat application.";
             String user = member.getNickname();
-            telltoOthers(user + "-" + groupmessage + " Time:" + (member.getTime()), Messages.JUST_JOINED);
+            telltoOthers("JUST_JOINED#" + user + "/" + (member.getTime()), Messages.JUST_JOINED);
         }
 
         /**
@@ -136,11 +145,17 @@ public class MultiChat implements constants {
          * @param user
          */
         private void removeUser(String user) {
-            $listofusers.remove(user);
+
             //notify others about his signing out.
-            for (PrintWriter printWriter : clientoutputstreams) {
-                printWriter.println("USER_EXITED#" + user);
-                printWriter.flush();
+            
+            for (Map.Entry<Member, PrintWriter> entry : clientoutputstreams.entrySet()) {
+                Member member = entry.getKey();
+                PrintWriter printWriter = entry.getValue();
+                if (member.getNickname().equals(user)) {
+                    clientoutputstreams.remove(member);
+                    telltoOthers("USER_EXITED#"+member.getNickname(), Messages.USER_EXITED);
+                    
+                }
             }
         }
     }

@@ -17,4 +17,6 @@ public interface constants {
     public Color COLOR_INFO=Color.GRAY;
     public Color COLOR_MESSAGE=Color.BLUE;
     public Color COLOR_LIST=Color.ORANGE;
+    public String MSG_JUST_JOINED="-just joined the chat.";
+    public String MSG_JUST_LEFT="-just left the chat.";
 }
