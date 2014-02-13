@@ -6,9 +6,17 @@ package client;
 
 import commons.Constants;
 import java.awt.Color;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import model.Member;
@@ -18,6 +26,10 @@ import model.Member;
  * @author raul
  */
 public class UserForm extends javax.swing.JFrame implements DocumentListener {
+
+    private OutputStream os;
+    private InputStream is;
+    private String username;
 
     /**
      * Creates new form UserForm
@@ -120,11 +132,8 @@ public class UserForm extends javax.swing.JFrame implements DocumentListener {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
-        try {
-            connectToServer();
-            
-        } catch (Exception e) {
-        }
+        username = jTextField1.getText();
+        connectToServer();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     /**
@@ -197,21 +206,50 @@ public class UserForm extends javax.swing.JFrame implements DocumentListener {
 
     private void connectToServer() {
         try {
-            Socket socket=new Socket(jTextField2.getText(), Constants.server_port);
-            Member m=new Member();
-            m.setNickname(jTextField1.getText());
-            
-            SimpleDateFormat dateFormat=new SimpleDateFormat("hh-mm-ss");
-            m.setTime(dateFormat.format(new Date(System.currentTimeMillis())));
-            
-            
-            new Client(socket,m).setVisible(true);
-            dispose();
+            Socket socket = new Socket(jTextField2.getText(), Constants.server_port);
+            this.os = socket.getOutputStream();
+            this.is = socket.getInputStream();
+            if (usernameExists(username)) {
+                info.setForeground(Color.red);
+                info.setText("Username already exists.");
+
+            } else {
+                Member m = new Member();
+                m.setNickname(jTextField1.getText());
+
+                SimpleDateFormat dateFormat = new SimpleDateFormat("hh-mm-ss");
+                m.setTime(dateFormat.format(new Date(System.currentTimeMillis())));
+                m.setAddress(socket.getInetAddress().getHostAddress());
+                new Client(socket, m).setVisible(true);
+                dispose();
+
+            }
         } catch (Exception ex) {
+            System.out.println("----------------------------\n" + ex + "\n------------------------------------------");
             info.setForeground(Color.red);
             info.setText("No such server found in the network.");
-        } 
+        }
     }
-    
-           
+
+    private boolean usernameExists(String text) {
+        PrintWriter printWriter = new PrintWriter(os);
+        printWriter.println("IS_AVAILABLE#" + text);
+        printWriter.flush();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        String response = null;
+        try {
+            while ((response = reader.readLine()) != null) {
+                
+                if (response.startsWith("IS_AVAILABLE")) {
+                    return Boolean.parseBoolean(response.split("#")[1]);
+                } else {
+                    return Boolean.parseBoolean(response.split("#")[1]);
+                }
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(UserForm.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return false;
+
+    }
 }
