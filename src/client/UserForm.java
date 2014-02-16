@@ -25,7 +25,7 @@ import model.Member;
  *
  * @author raul
  */
-public class UserForm extends javax.swing.JFrame implements DocumentListener {
+public class UserForm extends javax.swing.JFrame implements DocumentListener, Constants {
 
     private OutputStream os;
     private InputStream is;
@@ -211,7 +211,7 @@ public class UserForm extends javax.swing.JFrame implements DocumentListener {
             this.is = socket.getInputStream();
             if (usernameExists(username)) {
                 info.setForeground(Color.red);
-                info.setText("Username already exists.");
+                info.setText(MSG_USER_ALREADY_EXISTS);
 
             } else {
                 Member m = new Member();
@@ -227,23 +227,23 @@ public class UserForm extends javax.swing.JFrame implements DocumentListener {
         } catch (Exception ex) {
             System.out.println("----------------------------\n" + ex + "\n------------------------------------------");
             info.setForeground(Color.red);
-            info.setText("No such server found in the network.");
+            info.setText(MSG_NO_SERVER_FOUND);
         }
     }
 
     private boolean usernameExists(String text) {
         PrintWriter printWriter = new PrintWriter(os);
-        printWriter.println("IS_AVAILABLE#" + text);
+        printWriter.println(ACTION_SUFFIX_IS_AVAILABLE + ACTION_SEPARATOR + text);
         printWriter.flush();
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         String response = null;
         try {
             while ((response = reader.readLine()) != null) {
-                
-                if (response.startsWith("IS_AVAILABLE")) {
-                    return Boolean.parseBoolean(response.split("#")[1]);
+
+                if (response.startsWith(ACTION_SUFFIX_IS_AVAILABLE)) {
+                    return Boolean.parseBoolean(response.split(ACTION_SEPARATOR)[1]);
                 } else {
-                    return Boolean.parseBoolean(response.split("#")[1]);
+                    return Boolean.parseBoolean(response.split(ACTION_SEPARATOR)[1]);
                 }
             }
         } catch (IOException ex) {

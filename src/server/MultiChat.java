@@ -24,16 +24,13 @@ import model.Member;
 public class MultiChat implements Constants {
 
     private static HashMap<Member, PrintWriter> clientoutputstreams;
-//    private static ArrayList<Member> $listofusers;
 
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException {
         clientoutputstreams = new HashMap<Member, PrintWriter>();
-//        $listofusers = new ArrayList<Member>();
         ServerSocket server_sock = new ServerSocket(server_port);
-        int i = 0;
 
         while (true) {
             Socket clients = server_sock.accept();
@@ -70,40 +67,45 @@ public class MultiChat implements Constants {
 
 
                 while ((line = reader.readLine()) != null) {
-                    if (line.startsWith("JUST_JOINED")) {
-                        String token = line.split("#")[1];
-                        String member_details[] = token.split("/");
+                    if (line.startsWith(ACTION_SUFFIX_JUST_JOINED)) {
+                        String token = line.split(ACTION_SEPARATOR)[1];
+                        String member_details[] = token.split(ACTION_SEPARATOR_USER_LIST);
                         Member member = new Member();
                         member.setNickname(member_details[0]);
                         member.setTime(member_details[1]);
-//                        $listofusers.add(member);
-
                         clientoutputstreams.put(member, pw);
-//                        if (!$listofusers.isEmpty()) {
-
                         StringBuilder users = new StringBuilder();
                         for (Member m : clientoutputstreams.keySet()) {
-                            users.append(m.getNickname()).append("/");
+                            users.append(m.getNickname()).append(ACTION_SEPARATOR_USER_LIST);
                         }
                         telltoNewComer(member, users.toString());
                         users = null;
                         telltoOthersaboutothers(member);
-                    } else if (line.startsWith("MESSAGE")) {
+                    } else if (line.startsWith(ACTION_SUFFIX_MESSAGE)) {
 
-                        telltoOthers("MESSAGE#" + line.split("#")[1], Messages.MESSAGE);
-                    } else if (line.startsWith("USER_EXITED")) {
+                        telltoOthers(ACTION_SUFFIX_MESSAGE+ACTION_SEPARATOR+ line.split(ACTION_SEPARATOR)[1], Messages.MESSAGE);
+                    } else if (line.startsWith(ACTION_SUFFIX_USER_EXITED)) {
 
-                        removeUser(line.split("#")[1]);
-                    } else if (line.startsWith("IS_AVAILABLE")) {
-                        String username = line.split("#")[1];
+                        removeUser(line.split(ACTION_SEPARATOR)[1]);
+                    } else if (line.startsWith(ACTION_SUFFIX_IS_AVAILABLE)) {
+                        String username = line.split(ACTION_SEPARATOR)[1];
                         if (checkifUserExists(username)) {
-                            pw.println("IS_AVAILABLE#" + true);
-
+                            pw.println(ACTION_SUFFIX_IS_AVAILABLE+ACTION_SEPARATOR + true);
+                            
                         } else {
-                            pw.println("IS_AVAILABLE#" + false);
+                            pw.println(ACTION_SUFFIX_IS_AVAILABLE+ACTION_SEPARATOR+ false);
                         }
                         pw.flush();
+                    }else if(line.startsWith(ACTION_SUFFIX_STATUS_CHANGE)){    
+                        /**
+                         * Packet for status_change: STATUS_CHANGE#username:newStatus
+                         */
+                        String newStatus=line.split(ACTION_SEPARATOR_USER_JOINED_TIME)[1];
+                        String username=line.split(ACTION_SEPARATOR)[1].split(ACTION_SEPARATOR_USER_JOINED_TIME)[0];
+                        telltoOthers(ACTION_SUFFIX_STATUS_CHANGE+ACTION_SEPARATOR+username+ACTION_SEPARATOR_USER_JOINED_TIME+newStatus, Messages.STATUS_CHANGE);
+                        
                     }
+                    
 
 
                 }
@@ -133,7 +135,11 @@ public class MultiChat implements Constants {
                 } else if (msg_type == Messages.GIVE_ME_LISTS) {
                     printWriter.println(Groupmessage);
                     printWriter.flush();
+                }else if (msg_type == Messages.STATUS_CHANGE) {
+                    printWriter.println(Groupmessage);
+                    printWriter.flush();
                 }
+                
 
             }
 
@@ -141,7 +147,7 @@ public class MultiChat implements Constants {
 
         private void telltoOthersaboutothers(Member member) {
             String user = member.getNickname();
-            telltoOthers("JUST_JOINED#" + user + "/" + (member.getTime()), Messages.JUST_JOINED);
+            telltoOthers(ACTION_SUFFIX_JUST_JOINED+ACTION_SEPARATOR + user + ACTION_SEPARATOR_USER_LIST + (member.getTime()), Messages.JUST_JOINED);
         }
 
         /**
@@ -156,7 +162,7 @@ public class MultiChat implements Constants {
                 Member member = entry.getKey();
                 if (member.getNickname().equals(user)) {
                     m = member;
-                    telltoOthers("USER_EXITED#" + member.getNickname(), Messages.USER_EXITED);
+                    telltoOthers(ACTION_SUFFIX_USER_EXITED+ACTION_SEPARATOR + member.getNickname(), Messages.USER_EXITED);
 
                 }
             }
@@ -183,7 +189,7 @@ public class MultiChat implements Constants {
 
             }
 
-            printWriter.println("LIST#" + prevUsers);
+            printWriter.println(ACTION_SUFFIX_GIVE_ME_LISTS+ACTION_SEPARATOR + prevUsers);
             printWriter.flush();
         }
     }

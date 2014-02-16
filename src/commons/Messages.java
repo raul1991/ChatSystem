@@ -13,6 +13,7 @@ public enum Messages{
     USER_EXITED,
     GIVE_ME_LISTS,
     MESSAGE,
-    JUST_JOINED
+    JUST_JOINED,
+    STATUS_CHANGE
     
 }
