@@ -15,6 +15,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.event.DocumentEvent;
@@ -30,6 +31,11 @@ public class UserForm extends javax.swing.JFrame implements DocumentListener, Co
     private OutputStream os;
     private InputStream is;
     private String username;
+    private static Random randomColor = new Random();
+
+    private int colorMaker() {
+        return (randomColor.nextInt(256));
+    }
 
     /**
      * Creates new form UserForm
@@ -220,6 +226,8 @@ public class UserForm extends javax.swing.JFrame implements DocumentListener, Co
                 SimpleDateFormat dateFormat = new SimpleDateFormat("hh-mm-ss");
                 m.setTime(dateFormat.format(new Date(System.currentTimeMillis())));
                 m.setAddress(socket.getInetAddress().getHostAddress());
+                m.setStatus(null);
+                m.setColor(colorMaker());
                 new Client(socket, m).setVisible(true);
                 dispose();
 

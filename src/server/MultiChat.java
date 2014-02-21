@@ -72,7 +72,6 @@ public class MultiChat implements Constants {
 
 
                 while ((line = reader.readLine()) != null) {
-                    System.out.println("Debug[server]:"+line);
                     if (line.startsWith(ACTION_SUFFIX_JUST_JOINED)) {
                         /**
                          * Incoming packet: JUST_JOINED#userproperties
@@ -86,8 +85,7 @@ public class MultiChat implements Constants {
                         member.setTime(member_details[1]);
                         member.setAddress(member_details[2]);
                         member.setStatus(member_details[3]);
-                        member.setColor(colorMaker());
-                        System.out.println("Joined"+member);
+                        member.setColor(Integer.parseInt(member_details[4]));
                         clientoutputstreams.put(member, pw);
                         StringBuilder users = new StringBuilder();
                         for (Member m : clientoutputstreams.keySet()) {

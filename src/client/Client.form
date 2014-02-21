@@ -164,13 +164,7 @@
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
       <SubComponents>
-        <Component class="javax.swing.JTextArea" name="ChatWindow">
-          <Properties>
-            <Property name="editable" type="boolean" value="false"/>
-            <Property name="columns" type="int" value="20"/>
-            <Property name="rows" type="int" value="5"/>
-            <Property name="wrapStyleWord" type="boolean" value="true"/>
-          </Properties>
+        <Component class="javax.swing.JTextPane" name="chatWindow">
         </Component>
       </SubComponents>
     </Container>
@@ -209,6 +203,7 @@
             <Component class="javax.swing.JTextArea" name="ClientMessage">
               <Properties>
                 <Property name="columns" type="int" value="20"/>
+                <Property name="lineWrap" type="boolean" value="true"/>
                 <Property name="rows" type="int" value="5"/>
                 <Property name="toolTipText" type="java.lang.String" value="Message Box"/>
                 <Property name="wrapStyleWord" type="boolean" value="true"/>

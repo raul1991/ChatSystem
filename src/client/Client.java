@@ -20,6 +20,10 @@ import javax.swing.DefaultListModel;
 import javax.swing.JLabel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import model.Member;
 
 /**
@@ -27,7 +31,7 @@ import model.Member;
  * @author user
  */
 public class Client extends javax.swing.JFrame implements ListSelectionListener, Constants, WindowListener {
-    
+
     private Socket client_sock;
     private InputStream incoming_stream;
     private OutputStream outgoing_stream;
@@ -36,50 +40,57 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
     private DateFormat df;
     private String time;
     private final Member member;
-    
+    private SimpleAttributeSet userSpecificStyle;
+    private final SimpleAttributeSet incomingSpecificStyle;
+
+    private static enum MSG_TYPE {
+
+        INCOMING, OUTGOING, INFO
+    };
+
     @Override
     public void windowOpened(WindowEvent we) {
     }
-    
+
     @Override
     public void windowClosing(WindowEvent we) {
         writer.println(ACTION_SUFFIX_USER_EXITED + ACTION_SEPARATOR + this.member.getNickname());
         writer.flush();
     }
-    
+
     @Override
     public void windowClosed(WindowEvent we) {
         System.exit(1);
     }
-    
+
     @Override
     public void windowIconified(WindowEvent we) {
     }
-    
+
     @Override
     public void windowDeiconified(WindowEvent we) {
     }
-    
+
     @Override
     public void windowActivated(WindowEvent we) {
     }
-    
+
     @Override
     public void windowDeactivated(WindowEvent we) {
     }
-    
+
     public class TimerThread implements Runnable {
-        
+
         public TimerThread() {
             df = new SimpleDateFormat("hh:mm:ss");
-            
+
         }
-        
+
         @Override
         public void run() {
             while (true) {
                 time = df.format(System.currentTimeMillis());
-                
+
                 timespent.setText("<html><body><b><font color=#0000CC>" + time + "</font></b></body></html>");
                 try {
                     Thread.sleep(1000);
@@ -90,11 +101,40 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         }
     }
 
+    private void applyStyleAndSend(String message, MSG_TYPE msg_type) throws BadLocationException {
+        StyledDocument document = chatWindow.getStyledDocument();
+        switch (msg_type) {
+            case INCOMING:
+                document.insertString(document.getLength(), message, incomingSpecificStyle);
+                break;
+            case OUTGOING:
+                document.insertString(document.getLength(), message, userSpecificStyle);
+                break;
+            case INFO:
+                document.insertString(document.getLength(), message, userSpecificStyle);
+                break;
+            default:
+                break;
+
+        }
+        chatWindow.setCaretPosition(document.getLength());
+    }
+
     /**
      * Creates new form Client
      */
     public Client(Socket s, Member m) throws UnknownHostException, IOException {
         initComponents();
+        /**
+         * Set the style for outgoing messages.
+         */
+        userSpecificStyle = new SimpleAttributeSet();
+        StyleConstants.setForeground(userSpecificStyle, Color.MAGENTA);
+
+        incomingSpecificStyle = new SimpleAttributeSet();
+        StyleConstants.setForeground(incomingSpecificStyle, Color.GREEN);
+
+
         this.member = m;
         username.setFont(new Font("sans", Font.BOLD, 20));
         username.setText(m.getNickname());
@@ -106,14 +146,13 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         addWindowListener(this);
         writer.println(ACTION_SUFFIX_JUST_JOINED + ACTION_SEPARATOR + m);
         writer.flush();
-        
+
         Thread incoming_reader = new Thread(new MessageReader(m));
         Thread timer = new Thread(new TimerThread());
         incoming_reader.start();
         timer.start();
-        
-    }
 
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -132,7 +171,7 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         status = new javax.swing.JTextField();
         changeStatus = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
-        ChatWindow = new javax.swing.JTextArea();
+        chatWindow = new javax.swing.JTextPane();
         jPanel3 = new javax.swing.JPanel();
         Send = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -210,11 +249,7 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
                     .addComponent(changeStatus)))
         );
 
-        ChatWindow.setEditable(false);
-        ChatWindow.setColumns(20);
-        ChatWindow.setRows(5);
-        ChatWindow.setWrapStyleWord(true);
-        jScrollPane2.setViewportView(ChatWindow);
+        jScrollPane2.setViewportView(chatWindow);
 
         Send.setText("send");
         Send.addActionListener(new java.awt.event.ActionListener() {
@@ -224,6 +259,7 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         });
 
         ClientMessage.setColumns(20);
+        ClientMessage.setLineWrap(true);
         ClientMessage.setRows(5);
         ClientMessage.setToolTipText("Message Box");
         ClientMessage.setWrapStyleWord(true);
@@ -286,32 +322,36 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
 
     private void SendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SendActionPerformed
         String message = ClientMessage.getText().replace("\n", " ");
-        
+
         ClientMessage.setText("");
-        ChatWindow.append("\n" + "You:" + message);
-        writer.println(ACTION_SUFFIX_MESSAGE + ACTION_SEPARATOR + member.getNickname() + ACTION_SEPARATOR_USER_JOINED_TIME + message);
-        writer.flush();
+        try {
+            applyStyleAndSend("\n" + "You:" + message, MSG_TYPE.OUTGOING);
+            writer.println(ACTION_SUFFIX_MESSAGE + ACTION_SEPARATOR + member.getNickname() + ACTION_SEPARATOR_USER_JOINED_TIME + message);
+            writer.flush();
+
+        } catch (BadLocationException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
     }//GEN-LAST:event_SendActionPerformed
 
     private void statusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_statusActionPerformed
         // TODO add your handling code here:
-
     }//GEN-LAST:event_statusActionPerformed
 
     private void changeStatusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_changeStatusActionPerformed
         // TODO add your handling code here:
         /**
-        * STATUS_CHANGE#USERNAME:newStatus
-        */
-        writer.println(ACTION_SUFFIX_STATUS_CHANGE+ACTION_SEPARATOR+member.getNickname()+ACTION_SEPARATOR_USER_JOINED_TIME+status.getText());
+         * STATUS_CHANGE#USERNAME:newStatus
+         */
+        writer.println(ACTION_SUFFIX_STATUS_CHANGE + ACTION_SEPARATOR + member.getNickname() + ACTION_SEPARATOR_USER_JOINED_TIME + status.getText());
         writer.flush();
     }//GEN-LAST:event_changeStatusActionPerformed
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextArea ChatWindow;
     private javax.swing.JTextArea ClientMessage;
     private javax.swing.JButton Send;
     private javax.swing.JButton changeStatus;
+    private javax.swing.JTextPane chatWindow;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
@@ -344,39 +384,40 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
 //        }
 //        
 //    }
-    
     @Override
     public void valueChanged(ListSelectionEvent e) {
     }
-    
+
     public class MessageReader implements Runnable {
-        
+
         private String tokens[];
         private DefaultListModel listmodel = new DefaultListModel();
         private Member m;
-        
+
         public MessageReader(Member m) {
             this.m = m;
-            
-            
+
+
         }
-        
+
         @Override
         public void run() {
             try {
                 String line = null;
                 while ((line = reader_buffer.readLine()) != null) {
-                    System.out.println("Debug[client]:"+line);
                     if (line.contains(ACTION_SUFFIX_JUST_JOINED)) {
                         /**
-                         * Packet format: JUST_JOINED#username/just joined Time/address/status/color:
+                         * Packet format: JUST_JOINED#username/just joined
+                         * Time/address/status/color:
                          */
                         tokens = line.split(ACTION_SEPARATOR)[1].split(ACTION_SEPARATOR_USER_LIST);
                         if (!tokens[0].equals(this.m.getNickname())) {
-                            adduser(tokens[0],tokens[2],tokens[3],tokens[4]);
+                            adduser(tokens[0], tokens[2], tokens[3], tokens[4]);
                             //Add the text to the chat window with the color mentioned in the packet.
-                            
-                            ChatWindow.append("\n" + tokens[0] + " just joined the chat at."+tokens[1]);
+
+                            StyledDocument document = chatWindow.getStyledDocument();
+                            document.insertString(document.getLength(), "\n" + tokens[0] + " just joined the chat at." + tokens[1], userSpecificStyle);
+
                         } else {
                             /**
                              * You joined the chat.Here you can perform action.
@@ -384,69 +425,73 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
                         }
                     } else if (line.startsWith(ACTION_SUFFIX_GIVE_ME_LISTS)) {
                         /**
-                         * Packet incoming: LISTS#user1properties/user2properties2 and so on depending on no of users.
-                         * where properties= username;address;status;color
+                         * Packet incoming:
+                         * LISTS#user1properties/user2properties2 and so on
+                         * depending on no of users. where properties=
+                         * username;address;status;color
                          */
                         //get the individual properties
                         tokens = line.split(ACTION_SEPARATOR);
                         //iterate over individuals now.
                         for (String users : tokens[1].split(ACTION_SEPARATOR_USER_LIST)) {
-                            String[] properties=users.split(ACTION_SEPARATOR_USER_PROPERTIES);
-                            String prevUser=properties[0];
+                            String[] properties = users.split(ACTION_SEPARATOR_USER_PROPERTIES);
+                            String prevUser = properties[0];
                             if (!prevUser.equals(this.m.getNickname())) {
-                                ChatWindow.append("\n" + prevUser + " is available.");
-                                adduser(prevUser,properties[1],properties[2],properties[3]);
+                                applyStyleAndSend("\n" + prevUser + " is available.", MSG_TYPE.INFO);
+                                adduser(prevUser, properties[1], properties[2], properties[3]);
                             }
                         }
                     } else if (line.startsWith(ACTION_SUFFIX_GIVE_ME_INFO)) {
-                        ChatWindow.append("\n" + line.split(ACTION_SEPARATOR)[1]);
+                        applyStyleAndSend("\n" + line.split(ACTION_SEPARATOR)[1], MSG_TYPE.INFO);
                     } else if (line.startsWith(ACTION_SUFFIX_MESSAGE) && !line.split(ACTION_SEPARATOR)[1].split(ACTION_SEPARATOR_USER_JOINED_TIME)[0].equals(m.getNickname())) {
-                        ChatWindow.append("\n" + line.split(ACTION_SEPARATOR)[1]);
+                        applyStyleAndSend("\n" + line.split(ACTION_SEPARATOR)[1], MSG_TYPE.INCOMING);
                     } else if (line.startsWith(ACTION_SUFFIX_USER_EXITED)) {
                         String user = line.split(ACTION_SEPARATOR)[1];
-                        
+
                         if (!user.equals(this.m.getNickname())) {
-                            ChatWindow.append("\n" + line.split(ACTION_SEPARATOR)[1] + MSG_JUST_LEFT);
+                            applyStyleAndSend("\n" + line.split(ACTION_SEPARATOR)[1] + MSG_JUST_LEFT, MSG_TYPE.INFO);
                         }
-                        
+
                         removeUser(user);
-                        
-                    }else if(line.startsWith(ACTION_SUFFIX_STATUS_CHANGE)){
+
+                    } else if (line.startsWith(ACTION_SUFFIX_STATUS_CHANGE)) {
                         /**
                          * Incoming packet for status change
                          * STATUS_CHANGE#username:text
                          */
-                        String packet[]=line.split(ACTION_SEPARATOR_USER_JOINED_TIME);
-                        String packetNewStatus=packet[1];
-                        String packetUsername=packet[0].split(ACTION_SEPARATOR)[1];
-                        if(!m.getNickname().equals(packetUsername)){
-                            ChatWindow.append("\n"+packetUsername+" just changed the status \n \""+packetNewStatus+"\"");
+                        String packet[] = line.split(ACTION_SEPARATOR_USER_JOINED_TIME);
+                        String packetNewStatus = packet[1];
+                        String packetUsername = packet[0].split(ACTION_SEPARATOR)[1];
+                        if (!m.getNickname().equals(packetUsername)) {
+                            applyStyleAndSend("\n" + packetUsername + " just changed the status \n \"" + packetNewStatus + "\"", MSG_TYPE.INFO);
                         }
-                        
+
                     }
                 }
-                
+
+            } catch (BadLocationException ex) {
+                Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
                 Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        
-        private void adduser(String username,String address,String status,String color) {
-            JLabel newUser=new JLabel(username);
-            newUser.setToolTipText(address+" 's status-"+status);
+
+        private void adduser(String username, String address, String status, String color) {
+            JLabel newUser = new JLabel(username);
+            newUser.setToolTipText(address + " 's status-" + status);
             newUser.setForeground((Color.BLUE));
             listmodel.addElement(newUser.getText());
-            
+
             userlist.setSelectionBackground(COLOR_INFO);
             userlist.setModel(listmodel);
-            
-            
+
+
         }
-        
+
         private void removeUser(String username) {
-            
+
             listmodel.removeElement(username);
-            
+
         }
     }
 }

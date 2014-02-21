@@ -14,7 +14,7 @@ public interface Constants {
     public String uname=System.getProperty("user.name");
     public int server_port=12345;
     public Color COLOR_ERROR=Color.RED;
-    public Color COLOR_INFO=Color.GRAY;
+    public Color COLOR_INFO=Color.PINK;
     public Color COLOR_MESSAGE=Color.BLUE;
     public Color COLOR_LIST=Color.ORANGE;
     public String MSG_JUST_JOINED="-just joined the chat.";
