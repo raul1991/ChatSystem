@@ -5,6 +5,7 @@
 package client;
 
 import commons.Constants;
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -19,7 +20,6 @@ import javax.swing.DefaultListModel;
 import javax.swing.JLabel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.plaf.metal.MetalIconFactory;
 import model.Member;
 
 /**
@@ -27,62 +27,59 @@ import model.Member;
  * @author user
  */
 public class Client extends javax.swing.JFrame implements ListSelectionListener, Constants, WindowListener {
-
+    
+    private Socket client_sock;
+    private InputStream incoming_stream;
+    private OutputStream outgoing_stream;
+    private BufferedReader reader_buffer;
+    private PrintWriter writer;
     private DateFormat df;
     private String time;
     private final Member member;
-
+    
     @Override
     public void windowOpened(WindowEvent we) {
-//        throw new UnsupportedOperationException("Not supported yet.");
     }
-
+    
     @Override
     public void windowClosing(WindowEvent we) {
-        System.out.println("closing");
-        writer.println("USER_EXITED#" + this.member.getNickname());
+        writer.println(ACTION_SUFFIX_USER_EXITED + ACTION_SEPARATOR + this.member.getNickname());
         writer.flush();
     }
-
+    
     @Override
     public void windowClosed(WindowEvent we) {
-        System.out.println("closed");
         System.exit(1);
     }
-
+    
     @Override
     public void windowIconified(WindowEvent we) {
-//        throw new UnsupportedOperationException("Not supported yet.");
     }
-
+    
     @Override
     public void windowDeiconified(WindowEvent we) {
-//        throw new UnsupportedOperationException("Not supported yet.");
     }
-
+    
     @Override
     public void windowActivated(WindowEvent we) {
-//        throw new UnsupportedOperationException("Not supported yet.");
     }
-
+    
     @Override
     public void windowDeactivated(WindowEvent we) {
-//        throw new UnsupportedOperationException("Not supported yet.");
     }
-
+    
     public class TimerThread implements Runnable {
-
+        
         public TimerThread() {
-            //c=Calendar.getInstance();
             df = new SimpleDateFormat("hh:mm:ss");
-
+            
         }
-
+        
         @Override
         public void run() {
             while (true) {
                 time = df.format(System.currentTimeMillis());
-
+                
                 timespent.setText("<html><body><b><font color=#0000CC>" + time + "</font></b></body></html>");
                 try {
                     Thread.sleep(1000);
@@ -92,11 +89,6 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
             }
         }
     }
-    private Socket client_sock;
-    private InputStream incoming_stream;
-    private OutputStream outgoing_stream;
-    private BufferedReader reader_buffer;
-    private PrintWriter writer;
 
     /**
      * Creates new form Client
@@ -104,9 +96,6 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
     public Client(Socket s, Member m) throws UnknownHostException, IOException {
         initComponents();
         this.member = m;
-        iconlist.addListSelectionListener(this);
-
-//        setupimages();
         username.setFont(new Font("sans", Font.BOLD, 20));
         username.setText(m.getNickname());
         client_sock = s;
@@ -115,15 +104,16 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         outgoing_stream = client_sock.getOutputStream();
         writer = new PrintWriter(outgoing_stream);
         addWindowListener(this);
-        writer.println("JUST_JOINED#" + m);
+        writer.println(ACTION_SUFFIX_JUST_JOINED + ACTION_SEPARATOR + m);
         writer.flush();
         
         Thread incoming_reader = new Thread(new MessageReader(m));
         Thread timer = new Thread(new TimerThread());
         incoming_reader.start();
         timer.start();
-
+        
     }
+
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -139,6 +129,8 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         username = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
         timespent = new javax.swing.JLabel();
+        status = new javax.swing.JTextField();
+        changeStatus = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
         ChatWindow = new javax.swing.JTextArea();
         jPanel3 = new javax.swing.JPanel();
@@ -147,10 +139,8 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         ClientMessage = new javax.swing.JTextArea();
         jScrollPane3 = new javax.swing.JScrollPane();
         jTabbedPane2 = new javax.swing.JTabbedPane();
-        jScrollPane4 = new javax.swing.JScrollPane();
-        userlist = new javax.swing.JList();
         jScrollPane5 = new javax.swing.JScrollPane();
-        iconlist = new javax.swing.JList();
+        userlist = new javax.swing.JList();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setBackground(new java.awt.Color(153, 153, 0));
@@ -164,16 +154,38 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
 
         jLabel1.setText("Time Spent -");
 
+        status.setColumns(12);
+        status.setText("Some status");
+        status.setMaximumSize(new java.awt.Dimension(100, 100));
+        status.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                statusActionPerformed(evt);
+            }
+        });
+
+        changeStatus.setText("Change Status");
+        changeStatus.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                changeStatusActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(18, 18, 18)
-                .addComponent(jLabel2)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(username, javax.swing.GroupLayout.DEFAULT_SIZE, 98, Short.MAX_VALUE)
-                .addGap(84, 84, 84)
+                .addContainerGap()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(status, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(changeStatus))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jLabel2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(username, javax.swing.GroupLayout.DEFAULT_SIZE, 189, Short.MAX_VALUE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 19, Short.MAX_VALUE)
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(timespent, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -182,25 +194,24 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(19, 19, 19)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(username, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(19, 19, 19)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1)
-                            .addComponent(timespent, javax.swing.GroupLayout.PREFERRED_SIZE, 14, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addContainerGap(21, Short.MAX_VALUE)
-                        .addComponent(jLabel2)
-                        .addGap(10, 10, 10)))
-                .addContainerGap())
+                    .addComponent(jLabel1)
+                    .addComponent(timespent, javax.swing.GroupLayout.PREFERRED_SIZE, 14, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(37, Short.MAX_VALUE))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap(21, Short.MAX_VALUE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel2)
+                    .addComponent(username, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(status, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(changeStatus)))
         );
 
-        ChatWindow.setColumns(20);
         ChatWindow.setEditable(false);
+        ChatWindow.setColumns(20);
         ChatWindow.setRows(5);
         ChatWindow.setWrapStyleWord(true);
         jScrollPane2.setViewportView(ChatWindow);
@@ -223,7 +234,7 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 267, Short.MAX_VALUE)
+                .addComponent(jScrollPane1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(Send))
         );
@@ -236,15 +247,9 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         jTabbedPane2.setBackground(new java.awt.Color(153, 51, 255));
         jTabbedPane2.setForeground(javax.swing.UIManager.getDefaults().getColor("Button.disabledForeground"));
 
-        userlist.setModel(iconlist.getModel());
-        jScrollPane4.setViewportView(userlist);
+        jScrollPane5.setViewportView(userlist);
 
-        jTabbedPane2.addTab("Users", jScrollPane4);
-
-        iconlist.setModel(iconlist.getModel());
-        jScrollPane5.setViewportView(iconlist);
-
-        jTabbedPane2.addTab("tab2", jScrollPane5);
+        jTabbedPane2.addTab("users", jScrollPane5);
 
         jScrollPane3.setViewportView(jTabbedPane2);
 
@@ -269,7 +274,7 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jScrollPane2)
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
@@ -281,19 +286,32 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
 
     private void SendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SendActionPerformed
         String message = ClientMessage.getText().replace("\n", " ");
-
+        
         ClientMessage.setText("");
-//        ChatWindow.setForeground(COLOR_MESSAGE);
-//        ChatWindow.setFont(new Font("monospace", Font.BOLD, 14));
-        ChatWindow.append("\n"+"You:"+message);
-        writer.println("MESSAGE#" + member.getNickname() + ":" + message);
+        ChatWindow.append("\n" + "You:" + message);
+        writer.println(ACTION_SUFFIX_MESSAGE + ACTION_SEPARATOR + member.getNickname() + ACTION_SEPARATOR_USER_JOINED_TIME + message);
         writer.flush();
     }//GEN-LAST:event_SendActionPerformed
+
+    private void statusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_statusActionPerformed
+        // TODO add your handling code here:
+
+    }//GEN-LAST:event_statusActionPerformed
+
+    private void changeStatusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_changeStatusActionPerformed
+        // TODO add your handling code here:
+        /**
+        * STATUS_CHANGE#USERNAME:newStatus
+        */
+        writer.println(ACTION_SUFFIX_STATUS_CHANGE+ACTION_SEPARATOR+member.getNickname()+ACTION_SEPARATOR_USER_JOINED_TIME+status.getText());
+        writer.flush();
+    }//GEN-LAST:event_changeStatusActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextArea ChatWindow;
     private javax.swing.JTextArea ClientMessage;
     private javax.swing.JButton Send;
-    private javax.swing.JList iconlist;
+    private javax.swing.JButton changeStatus;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
@@ -301,129 +319,133 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
-    private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JTabbedPane jTabbedPane2;
+    private javax.swing.JTextField status;
     private javax.swing.JLabel timespent;
     private javax.swing.JList userlist;
     private javax.swing.JLabel username;
     // End of variables declaration//GEN-END:variables
 
-    private void setupimages() {
-        //  URL url=null;
-        DefaultListModel icons_model = new DefaultListModel();
-        //  Map<Object, Icon> icons = new HashMap<Object, Icon>();
-        for (int i = 1; i < 33; i++) {
-            JLabel label = new JLabel("", JLabel.CENTER);
-            java.net.URL url = getClass().getClassLoader().getResource("image-" + i + ".gif");
-            if (url != null) {
-                label.setIcon(MetalIconFactory.getFileChooserHomeFolderIcon());
-                icons_model.addElement(label.createImage(100, 100));
-                iconlist.setModel(icons_model);
-            } else {
-                System.err.println("NULL image");
-            }
-
-
-        }
-
-    }
-
+//    private void setupimages() {
+//        DefaultListModel icons_model = new DefaultListModel();
+//        for (int i = 1; i < 33; i++) {
+//            JLabel label = new JLabel("", JLabel.CENTER);
+//            java.net.URL url = getClass().getClassLoader().getResource("image-" + i + ".gif");
+//            if (url != null) {
+//                label.setIcon(MetalIconFactory.getFileChooserHomeFolderIcon());
+//                icons_model.addElement(label.createImage(100, 100));
+//                iconlist.setModel(icons_model);
+//            } else {
+//                System.err.println("NULL image");
+//            }
+//            
+//            
+//        }
+//        
+//    }
+    
     @Override
     public void valueChanged(ListSelectionEvent e) {
-        
     }
-
+    
     public class MessageReader implements Runnable {
-
+        
         private String tokens[];
         private DefaultListModel listmodel = new DefaultListModel();
         private Member m;
-
+        
         public MessageReader(Member m) {
             this.m = m;
+            
+            
         }
-
+        
         @Override
         public void run() {
             try {
-                String line = "";
+                String line = null;
                 while ((line = reader_buffer.readLine()) != null) {
-                    System.out.println("<---"+line);
-                    if (line.contains("JUST_JOINED")) {
+                    System.out.println("Debug[client]:"+line);
+                    if (line.contains(ACTION_SUFFIX_JUST_JOINED)) {
                         /**
-                         * Packet format: JUST_JOINED#username/just joined Time:
+                         * Packet format: JUST_JOINED#username/just joined Time/address/status/color:
                          */
-                        tokens = line.split("#")[1].split("/");
+                        tokens = line.split(ACTION_SEPARATOR)[1].split(ACTION_SEPARATOR_USER_LIST);
                         if (!tokens[0].equals(this.m.getNickname())) {
-                            adduser(tokens[0]);
-
-                            //ChatWindow.setForeground(COLOR_MESSAGE);
-                            //ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));
-                            ChatWindow.append("\n" + tokens[0]+MSG_JUST_JOINED);
+                            adduser(tokens[0],tokens[2],tokens[3],tokens[4]);
+                            //Add the text to the chat window with the color mentioned in the packet.
+                            
+                            ChatWindow.append("\n" + tokens[0] + " just joined the chat at."+tokens[1]);
                         } else {
                             /**
                              * You joined the chat.Here you can perform action.
                              */
                         }
-                    }
-                    if (line.startsWith("LIST")) {
-                        tokens = line.split("#");
-                        //ChatWindow.setForeground(COLOR_INFO);
-                        //ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));
-
-                        for (String users : tokens[1].split("/")) {
-                            if (!users.equals(this.m.getNickname())) {
-                                ChatWindow.append("\n" + users + " is available...");
-                                adduser(users);
+                    } else if (line.startsWith(ACTION_SUFFIX_GIVE_ME_LISTS)) {
+                        /**
+                         * Packet incoming: LISTS#user1properties/user2properties2 and so on depending on no of users.
+                         * where properties= username;address;status;color
+                         */
+                        //get the individual properties
+                        tokens = line.split(ACTION_SEPARATOR);
+                        //iterate over individuals now.
+                        for (String users : tokens[1].split(ACTION_SEPARATOR_USER_LIST)) {
+                            String[] properties=users.split(ACTION_SEPARATOR_USER_PROPERTIES);
+                            String prevUser=properties[0];
+                            if (!prevUser.equals(this.m.getNickname())) {
+                                ChatWindow.append("\n" + prevUser + " is available.");
+                                adduser(prevUser,properties[1],properties[2],properties[3]);
                             }
                         }
-                    }
-                    if (line.startsWith("INFO")) {
-                        //ChatWindow.setForeground(COLOR_ERROR);
-                        ChatWindow.append("\n" + line);
-                    }
-                    if (line.startsWith("MESSAGE") && !line.split("#")[1].split(":")[0].equals(m.getNickname())) {
-                        //ChatWindow.setForeground(COLOR_MESSAGE);
-                        //ChatWindow.setFont(new Font("monospace", Font.ITALIC, 14));
-                        ChatWindow.append("\n" + line.split("#")[1]);
-                    }
-
-                    if (line.startsWith("USER_EXITED")) {
-
-                        //ChatWindow.setForeground(COLOR_INFO);
-                        String user = line.split("#")[1];
-                        removeUser(user);
+                    } else if (line.startsWith(ACTION_SUFFIX_GIVE_ME_INFO)) {
+                        ChatWindow.append("\n" + line.split(ACTION_SEPARATOR)[1]);
+                    } else if (line.startsWith(ACTION_SUFFIX_MESSAGE) && !line.split(ACTION_SEPARATOR)[1].split(ACTION_SEPARATOR_USER_JOINED_TIME)[0].equals(m.getNickname())) {
+                        ChatWindow.append("\n" + line.split(ACTION_SEPARATOR)[1]);
+                    } else if (line.startsWith(ACTION_SUFFIX_USER_EXITED)) {
+                        String user = line.split(ACTION_SEPARATOR)[1];
+                        
                         if (!user.equals(this.m.getNickname())) {
-                            ChatWindow.append("\n" + line.split("#")[1] + " just left the chat.");
+                            ChatWindow.append("\n" + line.split(ACTION_SEPARATOR)[1] + MSG_JUST_LEFT);
                         }
+                        
+                        removeUser(user);
+                        
+                    }else if(line.startsWith(ACTION_SUFFIX_STATUS_CHANGE)){
+                        /**
+                         * Incoming packet for status change
+                         * STATUS_CHANGE#username:text
+                         */
+                        String packet[]=line.split(ACTION_SEPARATOR_USER_JOINED_TIME);
+                        String packetNewStatus=packet[1];
+                        String packetUsername=packet[0].split(ACTION_SEPARATOR)[1];
+                        if(!m.getNickname().equals(packetUsername)){
+                            ChatWindow.append("\n"+packetUsername+" just changed the status \n \""+packetNewStatus+"\"");
+                        }
+                        
                     }
                 }
-
+                
             } catch (IOException ex) {
                 Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-
-        private void adduser(String username) {
-
-            listmodel.addElement(new JLabel(username).getText());
-            userlist.setBackground(COLOR_LIST);
+        
+        private void adduser(String username,String address,String status,String color) {
+            JLabel newUser=new JLabel(username);
+            newUser.setToolTipText(address+" 's status-"+status);
+            newUser.setForeground((Color.BLUE));
+            listmodel.addElement(newUser.getText());
+            
             userlist.setSelectionBackground(COLOR_INFO);
             userlist.setModel(listmodel);
-
+            
+            
         }
-
+        
         private void removeUser(String username) {
-            int s = listmodel.size();
-            System.out.println(""+username);
-            for (int i = 0; i < s; i++) {
-
-                if ((listmodel.getElementAt(i)).equals(username)) {
-                    
-                        listmodel.remove(i);
-                }
-            }
+            
+            listmodel.removeElement(username);
             
         }
     }

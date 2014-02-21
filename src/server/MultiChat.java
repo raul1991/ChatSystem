@@ -4,8 +4,8 @@
  */
 package server;
 
-import commons.Messages;
 import commons.Constants;
+import commons.Messages;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import model.Member;
@@ -24,16 +25,13 @@ import model.Member;
 public class MultiChat implements Constants {
 
     private static HashMap<Member, PrintWriter> clientoutputstreams;
-//    private static ArrayList<Member> $listofusers;
-
+    
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException {
         clientoutputstreams = new HashMap<Member, PrintWriter>();
-//        $listofusers = new ArrayList<Member>();
         ServerSocket server_sock = new ServerSocket(server_port);
-        int i = 0;
 
         while (true) {
             Socket clients = server_sock.accept();
@@ -50,12 +48,19 @@ public class MultiChat implements Constants {
         private BufferedReader reader;
         private Calendar c;
         private SimpleDateFormat df;
-
+        private PrintWriter pw;
+        private static Random randomColor=new Random( );
+        
+        private int colorMaker(){
+            return (randomColor.nextInt(256));
+        }
         public multiclient(Socket client) throws IOException {
 
             this.connection = client;
             incoming_connection_stream = client.getInputStream();
             reader = new BufferedReader(new InputStreamReader(incoming_connection_stream));
+            pw = new PrintWriter(connection.getOutputStream());
+
             c = Calendar.getInstance();
             df = new SimpleDateFormat("hh:mm:ss");
         }
@@ -64,43 +69,58 @@ public class MultiChat implements Constants {
         public void run() {
             try {
                 String line = null;
-                while ((line = reader.readLine()) != null) {
 
-                    if (line.startsWith("JUST_JOINED")) {
-                        String token = line.split("#")[1];
-                        String member_details[] = token.split("/");
+
+                while ((line = reader.readLine()) != null) {
+                    System.out.println("Debug[server]:"+line);
+                    if (line.startsWith(ACTION_SUFFIX_JUST_JOINED)) {
+                        /**
+                         * Incoming packet: JUST_JOINED#userproperties
+                         * user properties : nickname/time/address/status/color
+                         */
+                        String token = line.split(ACTION_SEPARATOR)[1];
+                        String member_details[] = token.split(ACTION_SEPARATOR_USER_LIST);
+                        
                         Member member = new Member();
                         member.setNickname(member_details[0]);
                         member.setTime(member_details[1]);
-//                        $listofusers.add(member);
-
-                        PrintWriter pw = new PrintWriter(connection.getOutputStream());
+                        member.setAddress(member_details[2]);
+                        member.setStatus(member_details[3]);
+                        member.setColor(colorMaker());
+                        System.out.println("Joined"+member);
                         clientoutputstreams.put(member, pw);
-//                        if (!$listofusers.isEmpty()) {
-
                         StringBuilder users = new StringBuilder();
                         for (Member m : clientoutputstreams.keySet()) {
-                            users.append(m.getNickname()).append("/");
+                            users.append(m.getNickname()).append(";").append(m.getAddress()).append(";").append(m.getStatus()).append(";").append(m.getColor()).append(";").append(ACTION_SEPARATOR_USER_LIST);
                         }
-                        pw.println("LIST#" + users.toString());
-                        pw.flush();
+                        telltoNewComer(member, users.toString());
                         users = null;
-//                        } else {
-//                            pw.println("INFO#No user currently available.");
-//                            pw.flush();
-//                        }
-//                        clientoutputstreams.put(member.getNickname(), pw);
                         telltoOthersaboutothers(member);
-                    }
-                    if (line.startsWith("MESSAGE")) {
+                    } else if (line.startsWith(ACTION_SUFFIX_MESSAGE)) {
 
-                        telltoOthers("MESSAGE#"+line.split("#")[1], Messages.MESSAGE);
-                    }
+                        telltoOthers(ACTION_SUFFIX_MESSAGE+ACTION_SEPARATOR+ line.split(ACTION_SEPARATOR)[1], Messages.MESSAGE);
+                    } else if (line.startsWith(ACTION_SUFFIX_USER_EXITED)) {
 
-                    if (line.startsWith("USER_EXITED")) {
-
-                        removeUser(line.split("#")[1]);
+                        removeUser(line.split(ACTION_SEPARATOR)[1]);
+                    } else if (line.startsWith(ACTION_SUFFIX_IS_AVAILABLE)) {
+                        String username = line.split(ACTION_SEPARATOR)[1];
+                        if (checkifUserExists(username)) {
+                            pw.println(ACTION_SUFFIX_IS_AVAILABLE+ACTION_SEPARATOR + true);
+                            
+                        } else {
+                            pw.println(ACTION_SUFFIX_IS_AVAILABLE+ACTION_SEPARATOR+ false);
+                        }
+                        pw.flush();
+                    }else if(line.startsWith(ACTION_SUFFIX_STATUS_CHANGE)){    
+                        /**
+                         * Packet for status_change: STATUS_CHANGE#username:newStatus
+                         */
+                        String newStatus=line.split(ACTION_SEPARATOR_USER_JOINED_TIME)[1];
+                        String username=line.split(ACTION_SEPARATOR)[1].split(ACTION_SEPARATOR_USER_JOINED_TIME)[0];
+                        telltoOthers(ACTION_SUFFIX_STATUS_CHANGE+ACTION_SEPARATOR+username+ACTION_SEPARATOR_USER_JOINED_TIME+newStatus, Messages.STATUS_CHANGE);
+                        
                     }
+                    
 
 
                 }
@@ -109,34 +129,45 @@ public class MultiChat implements Constants {
             }
 
         }
+
         /**
-         * Redundant if else exists.Do check.
+         * 
+         *
          * @param Groupmessage
-         * @param msg_type 
+         * @param msg_type
          */
         public void telltoOthers(String Groupmessage, Messages msg_type) {
-//            Iterator it = clientoutputstreams.values();
             for (PrintWriter printWriter : clientoutputstreams.values()) {
-//                PrintWriter wr = (PrintWriter) it.next();
                 if (msg_type == Messages.JUST_JOINED) {
-                    printWriter.println(Groupmessage);
+                    printWriter.println(ACTION_SUFFIX_JUST_JOINED+ACTION_SEPARATOR + Groupmessage);
                     printWriter.flush();
                 } else if (msg_type == Messages.MESSAGE) {
                     printWriter.println(Groupmessage);
                     printWriter.flush();
-                }else if (msg_type==Messages.USER_EXITED){
+                } else if (msg_type == Messages.USER_EXITED) {
+                    printWriter.println(Groupmessage);
+                    printWriter.flush();
+                } else if (msg_type == Messages.GIVE_ME_LISTS) {
+                    printWriter.println(Groupmessage);
+                    printWriter.flush();
+                }else if (msg_type == Messages.STATUS_CHANGE) {
                     printWriter.println(Groupmessage);
                     printWriter.flush();
                 }
+                
 
             }
 
         }
 
         private void telltoOthersaboutothers(Member member) {
-            String groupmessage = "just joined the chat application.";
-            String user = member.getNickname();
-            telltoOthers("JUST_JOINED#" + user + "/" + (member.getTime()), Messages.JUST_JOINED);
+            /**
+             * Packet to send to other about the new joinee.
+             * JUST_JOINED#userproperties
+             * userproperties : nickname/time/address/status/color
+             */
+//            String user = member.getNickname();
+            telltoOthers(member.toString(), Messages.JUST_JOINED);
         }
 
         /**
@@ -145,18 +176,42 @@ public class MultiChat implements Constants {
          * @param user
          */
         private void removeUser(String user) {
-
             //notify others about his signing out.
-            
+            Member m = null;
             for (Map.Entry<Member, PrintWriter> entry : clientoutputstreams.entrySet()) {
                 Member member = entry.getKey();
-                PrintWriter printWriter = entry.getValue();
                 if (member.getNickname().equals(user)) {
-                    clientoutputstreams.remove(member);
-                    telltoOthers("USER_EXITED#"+member.getNickname(), Messages.USER_EXITED);
-                    
+                    m = member;
+                    telltoOthers(ACTION_SUFFIX_USER_EXITED+ACTION_SEPARATOR + member.getNickname(), Messages.USER_EXITED);
+
                 }
             }
+            clientoutputstreams.remove(m);
+        }
+
+        private boolean checkifUserExists(String userToSearch) {
+            for (Member member : clientoutputstreams.keySet()) {
+                if (member.getNickname().equals(userToSearch)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void telltoNewComer(Member newMember, String prevUsers) {
+            PrintWriter printWriter = null;
+            String s = newMember.getNickname();
+            for (Map.Entry<Member, PrintWriter> entry : clientoutputstreams.entrySet()) {
+                Member member = entry.getKey();
+                if (s.equals(member.getNickname())) {
+                    printWriter = entry.getValue();
+                    break;
+                }
+
+            }
+            
+            printWriter.println(ACTION_SUFFIX_GIVE_ME_LISTS+ACTION_SEPARATOR + prevUsers);
+            printWriter.flush();
         }
     }
 }
