@@ -22,6 +22,7 @@ public interface Constants {
     public String ACTION_SEPARATOR="#";
     public String ACTION_SEPARATOR_USER_LIST="/";
     public String ACTION_SEPARATOR_USER_JOINED_TIME=":";
+    public String ACTION_SEPARATOR_USER_PROPERTIES=";";
     public String ACTION_SUFFIX_IS_AVAILABLE="IS_AVAILABLE";
     public String ACTION_SUFFIX_JUST_JOINED="JUST_JOINED";
     public String ACTION_SUFFIX_USER_EXITED="USER_EXITED";

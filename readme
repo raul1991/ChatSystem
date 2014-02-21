@@ -1,9 +1,14 @@
-Changes left
--font correction. -done
--sign out functionality and alerts. -done
-- one to one chat
-- group chat
+Packet Structures changed
 
-Changes done.
--code based message send/receive
--Messages enum used now,not used much
+1. Packet format for client joined changed.
+    has now the color and the address(ip) from it joined.
+
+    Packet format NOW: JUST_JOINED#username/Time/status/color
+    Packet format Earlier: JUST_JOINED#username/Time/address/status/color
+
+
+Changes in the addUser Method
+
+    addUser NOW : private void adduser(String username)
+    addUser Earlier : private void adduser(String username,String address,String status,int color)
+    Explanation: The client who just joined in will be added with the tooltip showing its ip-status(blank if not set) and corresponding color.

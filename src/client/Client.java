@@ -5,6 +5,7 @@
 package client;
 
 import commons.Constants;
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -19,7 +20,6 @@ import javax.swing.DefaultListModel;
 import javax.swing.JLabel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.plaf.metal.MetalIconFactory;
 import model.Member;
 
 /**
@@ -96,7 +96,6 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
     public Client(Socket s, Member m) throws UnknownHostException, IOException {
         initComponents();
         this.member = m;
-        iconlist.addListSelectionListener(this);
         username.setFont(new Font("sans", Font.BOLD, 20));
         username.setText(m.getNickname());
         client_sock = s;
@@ -140,10 +139,8 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         ClientMessage = new javax.swing.JTextArea();
         jScrollPane3 = new javax.swing.JScrollPane();
         jTabbedPane2 = new javax.swing.JTabbedPane();
-        jScrollPane4 = new javax.swing.JScrollPane();
-        userlist = new javax.swing.JList();
         jScrollPane5 = new javax.swing.JScrollPane();
-        iconlist = new javax.swing.JList();
+        userlist = new javax.swing.JList();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setBackground(new java.awt.Color(153, 153, 0));
@@ -188,7 +185,7 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
                         .addComponent(jLabel2)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(username, javax.swing.GroupLayout.DEFAULT_SIZE, 189, Short.MAX_VALUE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 106, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 19, Short.MAX_VALUE)
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(timespent, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -250,15 +247,9 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
         jTabbedPane2.setBackground(new java.awt.Color(153, 51, 255));
         jTabbedPane2.setForeground(javax.swing.UIManager.getDefaults().getColor("Button.disabledForeground"));
 
-        userlist.setModel(iconlist.getModel());
-        jScrollPane4.setViewportView(userlist);
+        jScrollPane5.setViewportView(userlist);
 
-        jTabbedPane2.addTab("Users", jScrollPane4);
-
-        iconlist.setModel(iconlist.getModel());
-        jScrollPane5.setViewportView(iconlist);
-
-        jTabbedPane2.addTab("tab2", jScrollPane5);
+        jTabbedPane2.addTab("users", jScrollPane5);
 
         jScrollPane3.setViewportView(jTabbedPane2);
 
@@ -283,7 +274,7 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 74, Short.MAX_VALUE)
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
@@ -321,7 +312,6 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
     private javax.swing.JTextArea ClientMessage;
     private javax.swing.JButton Send;
     private javax.swing.JButton changeStatus;
-    private javax.swing.JList iconlist;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
@@ -329,7 +319,6 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
-    private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JTabbedPane jTabbedPane2;
     private javax.swing.JTextField status;
@@ -338,23 +327,23 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
     private javax.swing.JLabel username;
     // End of variables declaration//GEN-END:variables
 
-    private void setupimages() {
-        DefaultListModel icons_model = new DefaultListModel();
-        for (int i = 1; i < 33; i++) {
-            JLabel label = new JLabel("", JLabel.CENTER);
-            java.net.URL url = getClass().getClassLoader().getResource("image-" + i + ".gif");
-            if (url != null) {
-                label.setIcon(MetalIconFactory.getFileChooserHomeFolderIcon());
-                icons_model.addElement(label.createImage(100, 100));
-                iconlist.setModel(icons_model);
-            } else {
-                System.err.println("NULL image");
-            }
-            
-            
-        }
-        
-    }
+//    private void setupimages() {
+//        DefaultListModel icons_model = new DefaultListModel();
+//        for (int i = 1; i < 33; i++) {
+//            JLabel label = new JLabel("", JLabel.CENTER);
+//            java.net.URL url = getClass().getClassLoader().getResource("image-" + i + ".gif");
+//            if (url != null) {
+//                label.setIcon(MetalIconFactory.getFileChooserHomeFolderIcon());
+//                icons_model.addElement(label.createImage(100, 100));
+//                iconlist.setModel(icons_model);
+//            } else {
+//                System.err.println("NULL image");
+//            }
+//            
+//            
+//        }
+//        
+//    }
     
     @Override
     public void valueChanged(ListSelectionEvent e) {
@@ -377,26 +366,36 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
             try {
                 String line = null;
                 while ((line = reader_buffer.readLine()) != null) {
+                    System.out.println("Debug[client]:"+line);
                     if (line.contains(ACTION_SUFFIX_JUST_JOINED)) {
                         /**
-                         * Packet format: JUST_JOINED#username/just joined Time:
+                         * Packet format: JUST_JOINED#username/just joined Time/address/status/color:
                          */
                         tokens = line.split(ACTION_SEPARATOR)[1].split(ACTION_SEPARATOR_USER_LIST);
                         if (!tokens[0].equals(this.m.getNickname())) {
-                            adduser(tokens[0]);
+                            adduser(tokens[0],tokens[2],tokens[3],tokens[4]);
+                            //Add the text to the chat window with the color mentioned in the packet.
                             
-                            ChatWindow.append("\n" + tokens[0] + " just joined the chat.");
+                            ChatWindow.append("\n" + tokens[0] + " just joined the chat at."+tokens[1]);
                         } else {
                             /**
                              * You joined the chat.Here you can perform action.
                              */
                         }
                     } else if (line.startsWith(ACTION_SUFFIX_GIVE_ME_LISTS)) {
+                        /**
+                         * Packet incoming: LISTS#user1properties/user2properties2 and so on depending on no of users.
+                         * where properties= username;address;status;color
+                         */
+                        //get the individual properties
                         tokens = line.split(ACTION_SEPARATOR);
+                        //iterate over individuals now.
                         for (String users : tokens[1].split(ACTION_SEPARATOR_USER_LIST)) {
-                            if (!users.equals(this.m.getNickname())) {
-                                ChatWindow.append("\n" + users + " is available.");
-                                adduser(users);
+                            String[] properties=users.split(ACTION_SEPARATOR_USER_PROPERTIES);
+                            String prevUser=properties[0];
+                            if (!prevUser.equals(this.m.getNickname())) {
+                                ChatWindow.append("\n" + prevUser + " is available.");
+                                adduser(prevUser,properties[1],properties[2],properties[3]);
                             }
                         }
                     } else if (line.startsWith(ACTION_SUFFIX_GIVE_ME_INFO)) {
@@ -432,10 +431,12 @@ public class Client extends javax.swing.JFrame implements ListSelectionListener,
             }
         }
         
-        private void adduser(String username) {
+        private void adduser(String username,String address,String status,String color) {
+            JLabel newUser=new JLabel(username);
+            newUser.setToolTipText(address+" 's status-"+status);
+            newUser.setForeground((Color.BLUE));
+            listmodel.addElement(newUser.getText());
             
-            listmodel.addElement(new JLabel(username).getText());
-            userlist.setBackground(COLOR_LIST);
             userlist.setSelectionBackground(COLOR_INFO);
             userlist.setModel(listmodel);
             

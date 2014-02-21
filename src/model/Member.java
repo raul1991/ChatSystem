@@ -9,9 +9,13 @@ package model;
  * @author raul
  */
 public class Member {
+
     private String nickname;
     private String time;
     private String address;
+    private String status;
+    private int color;
+    private String defaultMessage="Hi..I am on chat.";
     /**
      * @return the nickname
      */
@@ -42,7 +46,12 @@ public class Member {
 
     @Override
     public String toString() {
-        return getNickname()+"/"+getTime();
+        if (getStatus() != null) {
+            return getNickname() + "/" + getTime() + "/" + getAddress() + "/" + getStatus() + "/" + getColor();
+        }else{
+            return getNickname() + "/" + getTime() + "/" + getAddress() + "/" + defaultMessage+ "/" + getColor();
+        }
+            
     }
 
     /**
@@ -58,6 +67,32 @@ public class Member {
     public void setAddress(String address) {
         this.address = address;
     }
-    
-    
+
+    /**
+     * @return the status
+     */
+    public String getStatus() {
+        return status;
+    }
+
+    /**
+     * @param status the status to set
+     */
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    /**
+     * @return the color
+     */
+    public int getColor() {
+        return color;
+    }
+
+    /**
+     * @param color the color to set
+     */
+    public void setColor(int color) {
+        this.color = color;
+    }
 }
